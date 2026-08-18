@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buchwahl — Teresais University</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Buchwahl — seiteneigene Stile ─────────────── */
+    .vote-page { background: var(--parchment); min-height: 70vh; padding: 3.5rem 0 5rem; }
+    .vote-head { text-align: center; margin-bottom: 2.5rem; }
+    .vote-head h1 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 300;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.15;
+    }
+    .vote-head h1 em { font-style: italic; color: var(--gold); }
+    .vote-head p { color: var(--slate); max-width: 46rem; margin: 0.8rem auto 0; }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      box-shadow: 0 2px 24px rgba(13,27,42,0.06);
+      padding: 2.2rem;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .card + .card { margin-top: 1.5rem; }
+    .card h2 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-weight: 400;
+      font-size: 1.7rem;
+      margin-bottom: 0.3rem;
+    }
+    .card-hint { color: var(--slate-light); font-size: 0.95rem; margin-bottom: 1.4rem; }
+
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+    @media (max-width: 720px) { .field-grid { grid-template-columns: 1fr; gap: 1.8rem; } }
+
+    .field-row { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.6rem; }
+    .field-num {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      width: 1.4rem;
+      text-align: right;
+      flex: none;
+    }
+    .field-row input {
+      flex: 1;
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 1rem;
+      color: var(--navy);
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.6rem 0.8rem;
+      min-width: 0;
+    }
+    .field-row input:focus { outline: 2px solid var(--gold-light); outline-offset: 1px; background: var(--white); }
+
+    button.btn { border: none; cursor: pointer; font-family: 'Montserrat', sans-serif; }
+    .btn-navy { background: var(--navy); color: var(--gold-pale); }
+    .btn-navy:hover { background: var(--navy-mid); }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--slate);
+    }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--navy); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 1.8rem; align-items: center; }
+    .btn-row .btn-outline { margin-left: 0; }
+
+    .notice {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      border-left: 3px solid var(--gold);
+      background: rgba(184,151,58,0.09);
+      color: var(--navy);
+      padding: 0.7rem 1rem;
+      margin-top: 1.2rem;
+      border-radius: 2px;
+    }
+    .notice.error { border-left-color: #a03030; background: rgba(160,48,48,0.08); }
+    .notice[hidden] { display: none; }
+
+    /* ── Übergabe ──────────────────────────────────── */
+    .handoff { text-align: center; padding: 1.5rem 0 0.5rem; }
+    .handoff .who {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 300;
+      color: var(--navy);
+      margin: 0.6rem 0 0.4rem;
+      word-break: break-word;
+    }
+    .handoff .secret {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    /* ── Stimmzettel ───────────────────────────────── */
+    .ballot { list-style: none; margin: 0; padding: 0; }
+    .ballot li { margin-bottom: 0.7rem; }
+    .ballot-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-align: left;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.9rem 1.1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 1.05rem;
+      color: var(--navy);
+    }
+    .ballot-btn:hover { border-color: var(--gold); background: var(--white); }
+    .ballot-btn:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+    .ballot-btn.chosen { background: var(--navy); color: var(--parchment); border-color: var(--navy); }
+    .pts {
+      flex: none;
+      width: 2.6rem;
+      height: 2.6rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      color: var(--slate-light);
+    }
+    .ballot-btn.chosen .pts { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+    .ballot-title { flex: 1; min-width: 0; }
+    .ballot-rank {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.66rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      opacity: 0.75;
+      display: block;
+    }
+    .progress {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--slate-light);
+    }
+
+    /* ── Ergebnis ──────────────────────────────────── */
+    .result-row { margin-bottom: 1.4rem; }
+    .result-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+    .result-name { font-size: 1.15rem; }
+    .result-name .place {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      color: var(--gold);
+      margin-right: 0.6rem;
+    }
+    .result-pts { font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--slate); white-space: nowrap; }
+    .bar { height: 8px; background: rgba(13,27,42,0.08); border-radius: 4px; margin-top: 0.5rem; overflow: hidden; }
+    .bar span { display: block; height: 100%; background: var(--gold); border-radius: 4px; }
+    .result-row.winner .bar span { background: var(--navy); }
+    .result-row.winner .result-name { font-weight: 600; }
+    .winner-banner {
+      background: var(--navy);
+      color: var(--parchment);
+      border-radius: 3px;
+      padding: 1.8rem 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .winner-banner .label {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+    }
+    .winner-banner .title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      font-weight: 300;
+      margin-top: 0.4rem;
+      line-height: 1.2;
+    }
+    .step-hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Banner -->
+  <div class="top-banner">
+    Teresais University Reading Circle &mdash; Buchwahl des Semesters
+  </div>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">
+        <div class="nav-crest">TU</div>
+        <div class="nav-title">
+          Teresais University
+          <span>Est. MCMXLVII &middot; Since 1947</span>
+        </div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#">Academics</a></li>
+        <li><a href="#">Research</a></li>
+        <li><a href="director.html">Faculty</a></li>
+        <li><a href="#">Library</a></li>
+        <li><a href="buchwahl.html" class="active">Buchwahl</a></li>
+        <li><a href="#">About</a></li>
+        <li><a href="#" class="nav-cta">Apply Now</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="vote-page">
+    <div class="container">
+
+      <div class="vote-head">
+        <span class="section-label">Geheime Abstimmung</span>
+        <h1>Welches Buch <em>lesen wir</em> als N&auml;chstes?</h1>
+        <p>
+          Bis zu sechs B&uuml;cher, bis zu sechs Stimmberechtigte. Jede Person vergibt ihre
+          Punkte einmal von der H&ouml;chstzahl bis 1 &mdash; bei vier B&uuml;chern also 4, 3, 2 und 1.
+          Es wird reihum am selben Ger&auml;t gew&auml;hlt; niemand sieht die Stimmen der anderen.
+        </p>
+      </div>
+
+      <!-- ── Schritt 1: Einrichtung ─────────────────── -->
+      <section class="card" id="step-setup">
+        <h2>1 &middot; B&uuml;cher und Teilnehmende</h2>
+        <p class="card-hint">
+          Mindestens zwei B&uuml;cher und eine Person. Leere Felder werden einfach ignoriert.
+        </p>
+
+        <div class="field-grid">
+          <div>
+            <span class="section-label">B&uuml;cher (max. 6)</span>
+            <div id="book-fields"></div>
+          </div>
+          <div>
+            <span class="section-label">Teilnehmende (max. 6)</span>
+            <div id="voter-fields"></div>
+          </div>
+        </div>
+
+        <div class="notice error" id="setup-error" hidden></div>
+
+        <div class="btn-row">
+          <button type="button" class="btn btn-gold" id="start-btn">Wahl starten</button>
+          <button type="button" class="btn btn-ghost" id="clear-setup-btn">Felder leeren</button>
+        </div>
+      </section>
+
+      <!-- ── Schritt 2: Ger&auml;t &uuml;bergeben ──────────── -->
+      <section class="card step-hidden" id="step-handoff">
+        <div class="handoff">
+          <span class="secret">Bitte weiterreichen &mdash; Stimme <span id="handoff-count"></span></span>
+          <div class="who" id="handoff-name"></div>
+          <p class="card-hint" id="handoff-hint"></p>
+          <div class="btn-row" style="justify-content:center">
+            <button type="button" class="btn btn-gold" id="handoff-btn">Ich bin bereit &mdash; Stimmzettel &ouml;ffnen</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Schritt 3: Stimmzettel ─────────────────── -->
+      <section class="card step-hidden" id="step-vote">
+        <h2 id="vote-title"></h2>
+        <p class="card-hint" id="vote-hint"></p>
+
+        <ul class="ballot" id="ballot"></ul>
+
+        <div class="notice" id="vote-status" aria-live="polite"></div>
+
+        <div class="btn-row">
+          <button type="button" class="btn btn-gold" id="submit-vote-btn" disabled>Stimme abgeben</button>
+          <button type="button" class="btn btn-ghost" id="reset-vote-btn">Rangfolge zur&uuml;cksetzen</button>
+        </div>
+      </section>
+
+      <!-- ── Schritt 4: Ergebnis ────────────────────── -->
+      <section class="card step-hidden" id="step-results">
+        <div class="winner-banner" id="winner-banner">
+          <div class="label" id="winner-label">Gew&auml;hltes Buch</div>
+          <div class="title" id="winner-title"></div>
+        </div>
+
+        <h2>Endstand</h2>
+        <p class="card-hint" id="results-hint"></p>
+        <div id="results-list"></div>
+
+        <div class="notice">
+          Einzelne Stimmzettel werden nicht angezeigt &mdash; nur die Gesamtpunkte.
+        </div>
+
+        <div class="btn-row">
+          <button type="button" class="btn btn-navy" id="again-btn">Nochmal w&auml;hlen (gleiche Liste)</button>
+          <button type="button" class="btn btn-ghost" id="new-btn">Neue Wahl</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-bottom">
+        <span>&copy; 2026 Teresais University. All rights reserved.</span>
+        <span><a href="index.html">Home</a>&ensp;&middot;&ensp;<a href="director.html">Our Director</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var MAX = 6;
+    var STORE_KEY = 'tu-buchwahl-v1';
+
+    /* ── Zustand ─────────────────────────────────── */
+    var state = {
+      phase: 'setup',      // setup | handoff | vote | results
+      books: [],           // [{ id, title }]
+      voters: [],          // [{ id, name }]
+      current: 0,          // Index der Person, die gerade dran ist
+      totals: {}           // bookId -> Punkte (aggregiert, keine Einzelstimmen)
+    };
+    var draft = {};        // bookId -> Punkte, nur f&uuml;r den offenen Stimmzettel
+    var order = [];        // Reihenfolge der Klicks im offenen Stimmzettel
+
+    /* ── Hilfen ──────────────────────────────────── */
+    function $(id) { return document.getElementById(id); }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function save() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* egal */ }
+    }
+
+    function load() {
+      try {
+        var raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return null;
+        var s = JSON.parse(raw);
+        if (!s || !Array.isArray(s.books) || !Array.isArray(s.voters)) return null;
+        return s;
+      } catch (e) { return null; }
+    }
+
+    function clearStore() {
+      try { localStorage.removeItem(STORE_KEY); } catch (e) { /* egal */ }
+    }
+
+    /* ── Eingabefelder aufbauen ──────────────────── */
+    function buildFields(hostId, prefix, placeholders) {
+      var host = $(hostId);
+      host.innerHTML = '';
+      for (var i = 0; i < MAX; i++) {
+        var row = document.createElement('div');
+        row.className = 'field-row';
+
+        var num = document.createElement('span');
+        num.className = 'field-num';
+        num.textContent = (i + 1) + '.';
+
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.id = prefix + '-' + i;
+        input.maxLength = 80;
+        input.placeholder = placeholders[i] || '';
+        input.setAttribute('aria-label', prefix === 'book' ? 'Buch ' + (i + 1) : 'Person ' + (i + 1));
+
+        row.appendChild(num);
+        row.appendChild(input);
+        host.appendChild(row);
+      }
+    }
+
+    function readFields(prefix) {
+      var out = [];
+      for (var i = 0; i < MAX; i++) {
+        var el = $(prefix + '-' + i);
+        var v = el ? el.value.trim().replace(/\s+/g, ' ') : '';
+        if (v) out.push(v);
+      }
+      return out;
+    }
+
+    function fillFields(prefix, values) {
+      for (var i = 0; i < MAX; i++) {
+        var el = $(prefix + '-' + i);
+        if (el) el.value = values[i] || '';
+      }
+    }
+
+    function firstDuplicate(list) {
+      var seen = {};
+      for (var i = 0; i < list.length; i++) {
+        var key = list[i].toLowerCase();
+        if (seen[key]) return list[i];
+        seen[key] = true;
+      }
+      return null;
+    }
+
+    /* ── Ansicht schalten ────────────────────────── */
+    function show(step) {
+      ['setup', 'handoff', 'vote', 'results'].forEach(function (name) {
+        $('step-' + name).classList.toggle('step-hidden', name !== step);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function render() {
+      if (state.phase === 'handoff') { renderHandoff(); show('handoff'); }
+      else if (state.phase === 'vote') { renderBallot(); show('vote'); }
+      else if (state.phase === 'results') { renderResults(); show('results'); }
+      else { show('setup'); }
+    }
+
+    /* ── Schritt 1: Einrichtung ──────────────────── */
+    function startVote() {
+      var books = readFields('book');
+      var voters = readFields('voter');
+      var err = $('setup-error');
+
+      function fail(msg) { err.textContent = msg; err.hidden = false; }
+      err.hidden = true;
+
+      if (books.length < 2) { return fail('Bitte mindestens zwei Bücher eintragen.'); }
+      if (voters.length < 1) { return fail('Bitte mindestens eine Person eintragen.'); }
+
+      var dupBook = firstDuplicate(books);
+      if (dupBook) { return fail('Das Buch „' + dupBook + '“ steht doppelt in der Liste.'); }
+      var dupVoter = firstDuplicate(voters);
+      if (dupVoter) { return fail('Der Name „' + dupVoter + '“ kommt doppelt vor — bitte unterscheidbar machen.'); }
+
+      state.books = books.map(function (t, i) { return { id: 'b' + i, title: t }; });
+      state.voters = voters.map(function (n, i) { return { id: 'v' + i, name: n }; });
+      state.totals = {};
+      state.books.forEach(function (b) { state.totals[b.id] = 0; });
+      state.current = 0;
+      state.phase = 'handoff';
+      save();
+      render();
+    }
+
+    /* ── Schritt 2: &Uuml;bergabe ────────────────────── */
+    function renderHandoff() {
+      var voter = state.voters[state.current];
+      var max = state.books.length;
+      $('handoff-count').textContent = (state.current + 1) + ' von ' + state.voters.length;
+      $('handoff-name').textContent = voter.name;
+      $('handoff-hint').innerHTML =
+        'Bitte das Ger&auml;t an <strong>' + esc(voter.name) + '</strong> weitergeben. ' +
+        'Erst dann &ouml;ffnen &mdash; auf dem Stimmzettel werden ' + max + ' Punkte bis 1 Punkt vergeben.';
+    }
+
+    /* ── Schritt 3: Stimmzettel ──────────────────── */
+    function openBallot() {
+      draft = {};
+      order = [];
+      state.phase = 'vote';
+      save();
+      render();
+    }
+
+    function toggleBook(bookId) {
+      var idx = order.indexOf(bookId);
+      if (idx === -1) {
+        if (order.length < state.books.length) order.push(bookId);
+      } else {
+        order.splice(idx, 1);
+      }
+      recomputeDraft();
+      renderBallot();
+    }
+
+    function recomputeDraft() {
+      var max = state.books.length;
+      draft = {};
+      order.forEach(function (id, i) { draft[id] = max - i; });
+    }
+
+    function renderBallot() {
+      var voter = state.voters[state.current];
+      var max = state.books.length;
+
+      $('vote-title').textContent = 'Stimmzettel von ' + voter.name;
+      $('vote-hint').innerHTML =
+        'In Wunschreihenfolge antippen: der erste Klick gibt <strong>' + max + ' Punkte</strong>, ' +
+        'der letzte <strong>1 Punkt</strong>. Nochmal antippen nimmt ein Buch wieder heraus.';
+
+      var list = $('ballot');
+      list.innerHTML = '';
+
+      state.books.forEach(function (book) {
+        var pts = draft[book.id];
+        var chosen = typeof pts === 'number';
+        var rank = chosen ? (order.indexOf(book.id) + 1) : 0;
+
+        var li = document.createElement('li');
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ballot-btn' + (chosen ? ' chosen' : '');
+        btn.setAttribute('aria-pressed', chosen ? 'true' : 'false');
+        btn.innerHTML =
+          '<span class="pts">' + (chosen ? pts : '&ndash;') + '</span>' +
+          '<span class="ballot-title">' +
+            '<span class="ballot-rank">' +
+              (chosen ? (rank + '. Wahl · ' + pts + (pts === 1 ? ' Punkt' : ' Punkte')) : 'noch nicht gewählt') +
+            '</span>' +
+            esc(book.title) +
+          '</span>';
+        btn.addEventListener('click', function () { toggleBook(book.id); });
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+
+      var done = order.length === max;
+      $('submit-vote-btn').disabled = !done;
+      $('vote-status').textContent = done
+        ? 'Alle ' + max + ' Bücher sind bewertet. Stimme kann abgegeben werden.'
+        : 'Noch ' + (max - order.length) + ' von ' + max + ' Büchern zu vergeben.';
+    }
+
+    function submitVote() {
+      if (order.length !== state.books.length) return;
+
+      // Nur die Summe wird gespeichert - keine Einzelstimmen.
+      Object.keys(draft).forEach(function (bookId) {
+        state.totals[bookId] = (state.totals[bookId] || 0) + draft[bookId];
+      });
+      draft = {};
+      order = [];
+
+      state.current += 1;
+      state.phase = (state.current >= state.voters.length) ? 'results' : 'handoff';
+      save();
+      render();
+    }
+
+    /* ── Schritt 4: Ergebnis ─────────────────────── */
+    function renderResults() {
+      var rows = state.books.map(function (b) {
+        return { title: b.title, points: state.totals[b.id] || 0 };
+      }).sort(function (a, b) { return b.points - a.points; });
+
+      var top = rows.length ? rows[0].points : 0;
+      var winners = rows.filter(function (r) { return r.points === top; });
+      var tie = winners.length > 1;
+
+      $('winner-label').textContent = tie ? 'Gleichstand an der Spitze' : 'Gewähltes Buch';
+      $('winner-title').textContent = winners.map(function (w) { return w.title; }).join('  ·  ');
+
+      var maxPossible = state.voters.length * state.books.length;
+      $('results-hint').textContent =
+        state.voters.length + (state.voters.length === 1 ? ' Stimme' : ' Stimmen') +
+        ' · ' + state.books.length + ' Bücher · höchstmögliche Punktzahl: ' + maxPossible +
+        (tie ? ' · Gleichstand — bitte per Stichwahl entscheiden.' : '');
+
+      var host = $('results-list');
+      host.innerHTML = '';
+      var place = 0, lastPts = null;
+
+      rows.forEach(function (r, i) {
+        if (r.points !== lastPts) { place = i + 1; lastPts = r.points; }
+        var width = top > 0 ? Math.round((r.points / top) * 100) : 0;
+
+        var row = document.createElement('div');
+        row.className = 'result-row' + (r.points === top ? ' winner' : '');
+        row.innerHTML =
+          '<div class="result-head">' +
+            '<span class="result-name"><span class="place">' + place + '.</span>' + esc(r.title) + '</span>' +
+            '<span class="result-pts">' + r.points + (r.points === 1 ? ' Punkt' : ' Punkte') + '</span>' +
+          '</div>' +
+          '<div class="bar"><span style="width:' + width + '%"></span></div>';
+        host.appendChild(row);
+      });
+    }
+
+    /* ── Neustarts ───────────────────────────────── */
+    function voteAgain() {
+      state.totals = {};
+      state.books.forEach(function (b) { state.totals[b.id] = 0; });
+      state.current = 0;
+      state.phase = 'handoff';
+      draft = {}; order = [];
+      save();
+      render();
+    }
+
+    function newVote(keepFields) {
+      var books = state.books.map(function (b) { return b.title; });
+      var voters = state.voters.map(function (v) { return v.name; });
+      state = { phase: 'setup', books: [], voters: [], current: 0, totals: {} };
+      draft = {}; order = [];
+      clearStore();
+      fillFields('book', keepFields ? books : []);
+      fillFields('voter', keepFields ? voters : []);
+      $('setup-error').hidden = true;
+      render();
+    }
+
+    /* ── Start ───────────────────────────────────── */
+    buildFields('book-fields', 'book', [
+      'z. B. Die Odyssee', 'z. B. Der Zauberberg', 'z. B. Krieg und Frieden',
+      'z. B. Der Prozess', 'z. B. Die Blechtrommel', 'z. B. Faust'
+    ]);
+    buildFields('voter-fields', 'voter', ['Name', 'Name', 'Name', 'Name', 'Name', 'Name']);
+
+    $('start-btn').addEventListener('click', startVote);
+    $('clear-setup-btn').addEventListener('click', function () {
+      fillFields('book', []); fillFields('voter', []); $('setup-error').hidden = true;
+      var first = $('book-0'); if (first) first.focus();
+    });
+    $('handoff-btn').addEventListener('click', openBallot);
+    $('submit-vote-btn').addEventListener('click', submitVote);
+    $('reset-vote-btn').addEventListener('click', function () {
+      draft = {}; order = []; renderBallot();
+    });
+    $('again-btn').addEventListener('click', voteAgain);
+    $('new-btn').addEventListener('click', function () { newVote(true); });
+
+    // Enter im Einrichtungsformular startet die Wahl.
+    document.querySelectorAll('#step-setup input').forEach(function (input) {
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); startVote(); }
+      });
+    });
+
+    // Gespeicherten Stand wiederherstellen (ohne offenen Stimmzettel).
+    var saved = load();
+    if (saved && saved.books.length >= 2 && saved.voters.length >= 1 && saved.phase !== 'setup') {
+      state = saved;
+      if (state.phase === 'vote') state.phase = 'handoff';   // angefangener Zettel wird verworfen
+      if (state.current >= state.voters.length) state.phase = 'results';
+      fillFields('book', state.books.map(function (b) { return b.title; }));
+      fillFields('voter', state.voters.map(function (v) { return v.name; }));
+    }
+    render();
+  })();
+  </script>
+
+</body>
+</html>
